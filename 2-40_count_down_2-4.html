@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Timer</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            color: #0f0;
+            overflow: hidden; /* Prevent scrolling */
+            background-color: black; /* Set body background to black */
+        }
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw; /* Full width of the viewport */
+            height: 100vh; /* Full height of the viewport */
+            overflow: hidden; /* Prevent overflow */
+            z-index: 0; /* Send background behind other content */
+            filter: blur(20px); /* Increased blur effect */
+        }
+        .background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #000000, #222222, #444444, #333333); /* Ultra-smooth gradient */
+            background-size: 200% 200%; /* Increase size for smoother transition */
+            animation: gradient 30s ease infinite; /* Slower animation for background */
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .ball {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 255, 0, 0.8);
+            animation: float 8s linear infinite; /* Increased duration for slower movement */
+            opacity: 0.5;
+            filter: blur(10px); /* Base blur effect */
+        }
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(40vh) translateX(-20px); /* Greater sway */ }
+            100% { transform: translateY(80vh) translateX(20px); /* Greater sway */ }
+        }
+        .timer {
+            display: flex;
+            gap: 30px; /* Space between time units */
+            margin-bottom: 20px;
+            position: relative; /* Position relative for z-index */
+            z-index: 1; /* Keep the timer above the background */
+        }
+        .time-unit {
+            background-color: #111;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 2rem;
+            text-shadow: 0 0 10px #0f0, 0 0 20px #0f0, 0 0 30px #0f0; /* Neon glow effect */
+            transition: transform 0.3s; /* Smooth transition for hover effect */
+            text-align: center; /* Center the text */
+        }
+        .time-unit:hover {
+            transform: scale(1.1); /* Slightly increase size on hover */
+        }
+        .label {
+            font-size: 1rem; /* Font size for labels */
+            color: #0f0; /* Green color for labels */
+            text-align: center; /* Center the labels */
+        }
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: #444;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+            position: relative; /* Positioning for the glow effect */
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%; /* Start with 0 width */
+            transition: width 1s, background-color 1s; /* Smooth transition for width and background color */
+            box-shadow: 0 0 10px #0f0, 0 0 20px #0f0; /* Neon glow effect */
+            border-radius: 10px; /* Ensure corners are rounded */
+        }
+        .progress-bar.red { background-color: red; /* Red progress bar before 7:30 AM */ }
+        .progress-bar.green { background-color: #0f0; /* Green progress bar during countdown */ }
+        .fps-counter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #0f0; /* Green color for FPS counter */
+            font-size: 1.5rem; /* Font size for readability */
+            z-index: 1; /* Keep it above the background */
+        }
+        .ball-counter {
+            position: absolute;
+            top: 40px; /* Below the FPS counter */
+            left: 10px;
+            color: #0f0; /* Green color for ball counter */
+            font-size: 1.5rem; /* Font size for readability */
+            z-index: 1; /* Keep it above the background */
+        }
+        .version {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #0f0; /* Green color for version display */
+            font-size: 1.5rem; /* Font size for readability */
+            z-index: 1; /* Keep it above the background */
+        }
+        .percentage {
+            position: absolute;
+            top: 100%; /* Position below the progress bar */
+            left: 50%; /* Center it horizontally */
+            transform: translateX(-50%); /* Adjust to center */
+            color: #0f0; /* Green color for percentage */
+            font-size: 1rem; /* Font size for readability */
+            z-index: 2; /* Keep it above the progress bar */
+            margin-top: 5px; /* Add a little space above */
+        }
+        .weather-box {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #0f0;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            z-index: 1; /* Keep it above the background */
+        }
+        .toggle-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #0f0;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 2; /* Keep it above the background */
+            transition: background-color 0.3s;
+        }
+        .toggle-button:hover {
+            background-color: #00cc00; /* Darker green on hover */
+        }
+    </style>
+</head>
+<body>
+
+<div class="background"></div> <!-- Dynamic background -->
+<div class="fps-counter" id="fpsCounter">FPS: 0</div> <!-- FPS Counter -->
+<div class="ball-counter" id="ballCounter">Balls: 0</div> <!-- Ball Counter -->
+<div class="version">Version 2.4</div> <!-- Version Display -->
+
+<div class="timer" id="countdown">
+    <div>
+        <div class="label">Hour</div>
+        <div class="time-unit" id="hours">Not Yet</div>
+    </div>
+    <div>
+        <div class="label">Minute</div>
+        <div class="time-unit" id="minutes">Not Yet</div>
+    </div>
+    <div>
+        <div class="label">Second</div>
+        <div class="time-unit" id="seconds">Not Yet</div>
+    </div>
+</div>
+
+<div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="percentage" id="percentageText">0%</div> <!-- Percentage Display -->
+</div>
+
+<div class="weather-box" id="weatherInfo">
+    Weather: Loading... <!-- Default weather info -->
+</div>
+
+<button class="toggle-button" id="toggleBalls">Stop Balls</button> <!-- Toggle Button -->
+
+<script>
+    // Fetch weather data from Open-Meteo API
+    async function fetchWeather() {
+        const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m");
+        const data = await response.json();
+        
+        if (data.current) {
+            const weatherDescription = `Temperature: ${data.current.temperature_2m}°C, Wind Speed: ${data.current.wind_speed_10m} km/h`;
+            document.getElementById('weatherInfo').innerText = weatherDescription;
+        } else {
+            document.getElementById('weatherInfo').innerText = 'Weather: Data not available';
+        }
+    }
+
+    // Call the fetchWeather function
+    fetchWeather();
+
+    let lastFrameTime = performance.now();
+    let frameCount = 0;
+    let fps = 0;
+
+    // Ball spawning control
+    let allowBalls = true;
+
+    // Function to update FPS counter
+    function updateFPS() {
+        const currentTime = performance.now();
+        frameCount++;
+
+        // Calculate FPS every second
+        if (currentTime - lastFrameTime >= 1000) {
+            fps = frameCount;
+            frameCount = 0;
+            lastFrameTime = currentTime;
+            document.getElementById('fpsCounter').innerText = `FPS: ${fps}`;
+        }
+
+        requestAnimationFrame(updateFPS);
+    }
+
+    const maxBalls = 200; // Maximum number of balls
+    let currentBallCount = 0; // Current count of balls
+
+    // Function to update the ball counter display
+    function updateBallCounter() {
+        document.getElementById('ballCounter').innerText = `Balls: ${currentBallCount}`;
+    }
+
+    // Function to create balls
+    function createBall() {
+        if (allowBalls && currentBallCount < maxBalls) { // Check if current count is less than max
+            const ball = document.createElement('div');
+            ball.classList.add('ball');
+
+            // Randomize size and horizontal position
+            const size = Math.random() * 15 + 5; // Size between 5px and 20px
+            ball.style.width = `${size}px`;
+            ball.style.height = `${size}px`;
+            ball.style.left = `${Math.random() * 100}vw`; // Random horizontal position
+            
+            // Set the top position to spawn lower on the screen
+            ball.style.top = `-${size - 10}px`; // Start above the viewport (50px lower)
+
+            // Add a small random blur variation
+            const blurAmount = Math.random() * 3 + 1; // Blur between 1px and 4px
+            ball.style.filter = `blur(${blurAmount}px)`; // Apply random blur
+
+            // Append ball to body
+            document.body.appendChild(ball);
+            currentBallCount++; // Increment ball count
+            updateBallCounter(); // Update ball counter display
+
+            // Set the animation duration, increasing by 5 seconds
+            ball.style.animationDuration = `${Math.random() * 5 + 13}s`; // Duration between 13s and 18s
+
+            // Remove ball after it has floated away
+            ball.addEventListener('animationend', () => {
+                // Smoothly move well below the viewport before removal
+                ball.style.transition = "transform 1s ease-out"; // Transition for smooth disappearance
+                ball.style.transform = "translateY(150vh)"; // Move down to well below the viewport
+                setTimeout(() => {
+                    ball.remove();
+                    currentBallCount--; // Decrement ball count when removed
+                    updateBallCounter(); // Update ball counter display
+                }, 500); // Wait for transition to complete before removing
+            });
+        }
+    }
+
+    // Create balls at intervals
+    const ballInterval = setInterval(createBall, 300); // Create a new ball every 300ms
+
+    const countdownFunction = setInterval(() => {
+        const now = new Date();
+        const targetTime = new Date();
+        
+        // Set target time to 2:40 PM
+        targetTime.setHours(14, 40, 0, 0); // 2:40 PM
+
+        // If the time has already passed today, set the target to tomorrow
+        if (now > targetTime) {
+            targetTime.setDate(targetTime.getDate() + 1);
+        }
+
+        // Check if current time is before 7:30 AM
+        const startTime = new Date();
+        startTime.setHours(7, 30, 0, 0); // 7:30 AM
+
+        // If before 7:30 AM
+        if (now < startTime) {
+            document.getElementById("hours").innerHTML = "Not Yet";
+            document.getElementById("minutes").innerHTML = "Not Yet";
+            document.getElementById("seconds").innerHTML = "Not Yet";
+            document.getElementById("progressBar").className = "progress-bar red"; // Set progress bar to red
+            document.getElementById("progressBar").style.width = "0%"; // Keep progress bar at 0%
+            document.getElementById("percentageText").innerText = "0%"; // Update percentage
+        } else {
+            // Calculate distance from now to the target time
+            const distance = targetTime - now;
+
+            // Time calculations for hours, minutes, and seconds
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Display the result in the timer element
+            document.getElementById("hours").innerHTML = (distance <= 0) ? "0" : hours; // Show "0" if time is up
+            document.getElementById("minutes").innerHTML = (distance <= 0 && hours === 0) ? "0" : minutes; // Show "0" for minutes if hours are 0
+            document.getElementById("seconds").innerHTML = (distance <= 0 && hours === 0 && minutes === 0) ? "0" : seconds; // Show "0" for seconds if hours and minutes are 0
+
+            // Only calculate progress if we are between 7:30 AM and 2:40 PM
+            if (now >= startTime && now < targetTime) {
+                const totalDuration = targetTime - startTime;
+                const elapsedDuration = now - startTime;
+                const progressPercentage = (elapsedDuration / totalDuration) * 100;
+
+                // Update the progress bar
+                document.getElementById("progressBar").className = "progress-bar green"; // Set progress bar to green
+                document.getElementById("progressBar").style.width = progressPercentage + "%";
+                document.getElementById("percentageText").innerText = Math.floor(progressPercentage) + "%"; // Update percentage
+            }
+
+            // If the countdown is finished (at 2:40 PM), reset the timer
+            if (distance < 0) {
+                clearInterval(countdownFunction);
+                document.getElementById("countdown").innerHTML = "You are free.";
+                document.getElementById("progressBar").style.width = "100%"; // Fill progress bar
+                document.getElementById("percentageText").innerText = "100%"; // Update percentage
+            }
+        }
+    }, 1000);
+
+    // Toggle button functionality
+    document.getElementById('toggleBalls').addEventListener('click', () => {
+        allowBalls = !allowBalls; // Toggle the state
+        document.getElementById('toggleBalls').innerText = allowBalls ? 'Stop Balls' : 'Allow Balls'; // Update button text
+    });
+
+    // Start the FPS counter
+    updateFPS();
+</script>
+
+</body>
+</html>
