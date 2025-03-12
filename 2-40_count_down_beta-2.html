@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Timer</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
+            color: #0f0;
+        }
+        .timer {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .time-unit {
+            background-color: #111;
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 2rem;
+            text-shadow: 0 0 10px #0f0, 0 0 20px #0f0, 0 0 30px #0f0; /* Neon glow effect */
+            transition: transform 0.3s; /* Smooth transition for hover effect */
+        }
+        .time-unit:hover {
+            transform: scale(1.1); /* Slightly increase size on hover */
+        }
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: #444;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #0f0;
+            width: 100%; /* Start full */
+            transition: width 1s; /* Smooth transition for the width */
+        }
+    </style>
+</head>
+<body>
+
+<div class="timer" id="countdown">
+    <div class="time-unit" id="hours"></div>
+    <div class="time-unit" id="minutes"></div>
+    <div class="time-unit" id="seconds"></div>
+</div>
+
+<div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<script>
+    const countdownFunction = setInterval(() => {
+        const now = new Date();
+        const targetTime = new Date();
+
+        // Set target time to 2:40 PM
+        targetTime.setHours(14, 40, 0, 0); // 2:40 PM
+
+        // If the time has already passed today, set the target to tomorrow
+        if (now > targetTime) {
+            targetTime.setDate(targetTime.getDate() + 1);
+        }
+
+        const distance = targetTime - now;
+
+        // Time calculations for hours, minutes, and seconds
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        // Display the result in the timer element
+        document.getElementById("hours").innerHTML = hours + "h";
+        document.getElementById("minutes").innerHTML = minutes + "m";
+        document.getElementById("seconds").innerHTML = seconds + "s";
+
+        // Calculate progress
+        const totalDuration = targetTime.getTime() - (now.getTime() - (24 * 60 * 60 * 1000));
+        const progressPercentage = ((totalDuration - distance) / totalDuration) * 100;
+
+        // Update the progress bar
+        document.getElementById("progressBar").style.width = progressPercentage + "%";
+
+        // If the countdown is finished (at 2:40 PM), reset the timer
+        if (distance < 0) {
+            clearInterval(countdownFunction);
+            document.getElementById("countdown").innerHTML = "You are free.";
+            document.getElementById("progressBar").style.width = "100%"; // Fill progress bar
+        }
+    }, 1000);
+</script>
+
+</body>
+</html>
