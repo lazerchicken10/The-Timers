@@ -57,10 +57,8 @@
             100% { transform: translateY(80vh) translateX(20px); /* Greater sway */ }
         }
         .timer {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            gap: 10px;
-            text-align: center;
+            display: flex;
+            gap: 30px; /* Space between time units */
             margin-bottom: 20px;
             position: relative; /* Position relative for z-index */
             z-index: 1; /* Keep the timer above the background */
@@ -69,13 +67,19 @@
             background-color: #111;
             border: 2px solid #0f0;
             border-radius: 10px;
-            padding: 20px;
+            padding: 10px;
             font-size: 2rem;
             text-shadow: 0 0 10px #0f0, 0 0 20px #0f0, 0 0 30px #0f0; /* Neon glow effect */
             transition: transform 0.3s; /* Smooth transition for hover effect */
+            text-align: center; /* Center the text */
         }
         .time-unit:hover {
             transform: scale(1.1); /* Slightly increase size on hover */
+        }
+        .label {
+            font-size: 1rem; /* Font size for labels */
+            color: #0f0; /* Green color for labels */
+            text-align: center; /* Center the labels */
         }
         .progress-container {
             width: 100%;
@@ -119,6 +123,16 @@
             font-size: 1.5rem; /* Font size for readability */
             z-index: 1; /* Keep it above the background */
         }
+        .percentage {
+            position: absolute;
+            top: 100%; /* Position below the progress bar */
+            left: 50%; /* Center it horizontally */
+            transform: translateX(-50%); /* Adjust to center */
+            color: #0f0; /* Green color for percentage */
+            font-size: 1rem; /* Font size for readability */
+            z-index: 2; /* Keep it above the progress bar */
+            margin-top: 5px; /* Add a little space above */
+        }
     </style>
 </head>
 <body>
@@ -126,16 +140,26 @@
 <div class="background"></div> <!-- Dynamic background -->
 <div class="fps-counter" id="fpsCounter">FPS: 0</div> <!-- FPS Counter -->
 <div class="ball-counter" id="ballCounter">Balls: 0</div> <!-- Ball Counter -->
-<div class="version">Version 2.0</div> <!-- Version Display -->
+<div class="version">Version 2.3</div> <!-- Version Display -->
 
 <div class="timer" id="countdown">
-    <div class="time-unit" id="hours">Not Yet</div>
-    <div class="time-unit" id="minutes">Not Yet</div>
-    <div class="time-unit" id="seconds">Not Yet</div>
+    <div>
+        <div class="label">Hour</div>
+        <div class="time-unit" id="hours">Not Yet</div>
+    </div>
+    <div>
+        <div class="label">Minute</div>
+        <div class="time-unit" id="minutes">Not Yet</div>
+    </div>
+    <div>
+        <div class="label">Second</div>
+        <div class="time-unit" id="seconds">Not Yet</div>
+    </div>
 </div>
 
 <div class="progress-container">
     <div class="progress-bar" id="progressBar"></div>
+    <div class="percentage" id="percentageText">0%</div> <!-- Percentage Display -->
 </div>
 
 <script>
@@ -234,6 +258,7 @@
             document.getElementById("seconds").innerHTML = "Not Yet";
             document.getElementById("progressBar").className = "progress-bar red"; // Set progress bar to red
             document.getElementById("progressBar").style.width = "0%"; // Keep progress bar at 0%
+            document.getElementById("percentageText").innerText = "0%"; // Update percentage
         } else {
             // Calculate distance from now to the target time
             const distance = targetTime - now;
@@ -243,14 +268,10 @@
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            // Convert to 12-hour format
-            const displayHours = (hours % 12) || 12; // Convert to 12-hour format
-            const ampm = hours >= 12 ? 'PM' : 'AM'; // Determine AM or PM
-
             // Display the result in the timer element
-            document.getElementById("hours").innerHTML = displayHours + " " + ampm;
-            document.getElementById("minutes").innerHTML = minutes + "m";
-            document.getElementById("seconds").innerHTML = seconds + "s";
+            document.getElementById("hours").innerHTML = (distance <= 0) ? "0" : hours; // Show "0" if time is up
+            document.getElementById("minutes").innerHTML = (distance <= 0 && hours === 0) ? "0" : minutes; // Show "0" for minutes if hours are 0
+            document.getElementById("seconds").innerHTML = (distance <= 0 && hours === 0 && minutes === 0) ? "0" : seconds; // Show "0" for seconds if hours and minutes are 0
 
             // Only calculate progress if we are between 7:30 AM and 2:40 PM
             if (now >= startTime && now < targetTime) {
@@ -261,6 +282,7 @@
                 // Update the progress bar
                 document.getElementById("progressBar").className = "progress-bar green"; // Set progress bar to green
                 document.getElementById("progressBar").style.width = progressPercentage + "%";
+                document.getElementById("percentageText").innerText = Math.floor(progressPercentage) + "%"; // Update percentage
             }
 
             // If the countdown is finished (at 2:40 PM), reset the timer
@@ -268,6 +290,7 @@
                 clearInterval(countdownFunction);
                 document.getElementById("countdown").innerHTML = "You are free.";
                 document.getElementById("progressBar").style.width = "100%"; // Fill progress bar
+                document.getElementById("percentageText").innerText = "100%"; // Update percentage
             }
         }
     }, 1000);
